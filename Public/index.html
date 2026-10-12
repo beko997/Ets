@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Veil Chat — Şifreli Sohbet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07100c; --bg2: #0a1611; --card: #0c1a14; --border: #17332a;
+    --fg: #d6f5e8; --muted: #6f8a80; --accent: #10b981; --accent2: #34d399;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--fg); font-family: 'JetBrains Mono', ui-monospace, monospace; -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; cursor: pointer; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  .home { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; position: relative; }
+  .home::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(to right, rgba(16,185,129,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(16,185,129,.05) 1px, transparent 1px); background-size: 36px 36px; pointer-events: none; -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%); mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 75%); }
+  .glow { position: absolute; top: -160px; left: 50%; transform: translateX(-50%); width: 460px; height: 460px; border-radius: 50%; background: rgba(16,185,129,.18); filter: blur(80px); pointer-events: none; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: rgba(12,26,20,.6); padding: 5px 12px; border-radius: 999px; font-size: 12px; color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  h1 { font-size: clamp(40px, 8vw, 72px); margin: 18px 0 12px; letter-spacing: -1px; text-shadow: 0 0 24px rgba(16,185,129,.4); }
+  .sub { color: var(--muted); max-width: 560px; margin: 0 auto 36px; line-height: 1.6; font-size: 14px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 680px; margin: 0 auto; }
+  @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+  .card { border: 1px solid var(--border); background: rgba(12,26,20,.6); border-radius: 16px; padding: 24px; }
+  .card h2 { font-size: 15px; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .i { color: var(--accent2); }
+  label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  input { width: 100%; background: #0a1410; border: 1px solid var(--border); color: var(--fg); padding: 10px 12px; border-radius: 10px; font-family: inherit; font-size: 13px; outline: none; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,.15); }
+  .btn { width: 100%; margin-top: 14px; border: none; border-radius: 10px; padding: 11px; font-size: 13px; font-weight: 600; transition: .15s; }
+  .btn-primary { background: var(--accent); color: #04140d; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--fg); }
+  .btn-ghost:hover { border-color: var(--accent); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; max-width: 680px; margin: 36px auto 0; }
+  @media (max-width: 640px) { .features { grid-template-columns: 1fr; } }
+  .feat { border: 1px solid var(--border); background: rgba(12,26,20,.4); border-radius: 14px; padding: 18px; }
+  .feat .ic { width: 34px; height: 34px; border-radius: 10px; background: rgba(16,185,129,.1); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+  .feat h3 { font-size: 13px; margin: 0 0 4px; }
+  .feat p { font-size: 11px; color: var(--muted); margin: 0; line-height: 1.5; }
+  .err { color: #f87171; font-size: 11px; margin-top: 8px; }
+
+  .room { height: 100vh; display: flex; flex-direction: column; }
+  .top { border-bottom: 1px solid var(--border); }
+  .top .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
+  .iconbtn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--fg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .iconbtn:hover { border-color: var(--accent); }
+  .top .title { flex: 1; min-width: 0; }
+  .top .title b { font-size: 14px; }
+  .top .title small { display: block; color: var(--muted); font-size: 11px; word-break: break-all; }
+  .copy { border: 1px solid var(--border); background: transparent; color: var(--fg); border-radius: 10px; padding: 8px 12px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  .copy:hover { border-color: var(--accent); }
+  .msgs { flex: 1; overflow-y: auto; padding: 20px 0; }
+  .bubble { max-width: 78%; padding: 9px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; margin: 6px 0; overflow: hidden; }
+  .mine { margin-left: auto; background: var(--accent); color: #04140d; border-bottom-right-radius: 4px; }
+  .theirs { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .failed { font-style: italic; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 13px; }
+  .center { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+  .composer { border-top: 1px solid var(--border); padding: 12px 0; }
+  .composer .box { display: flex; gap: 8px; align-items: flex-end; border: 1px solid var(--border); border-radius: 14px; padding: 8px; background: #0a1410; }
+  .composer textarea { flex: 1; background: transparent; border: none; color: var(--fg); resize: none; font-family: inherit; font-size: 13px; outline: none; max-height: 140px; line-height: 1.4; padding: 8px; }
+  .send { border: none; background: var(--accent); color: #04140d; border-radius: 10px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .send:disabled { opacity: .4; }
+  .send:hover { background: var(--accent2); }
+  .hidden { display: none; }
+
+  /* medya */
+  .m-loading { padding: 10px 14px; font-size: 12px; opacity: .7; white-space: normal; }
+  .m-err { padding: 10px 14px; font-size: 12px; opacity: .7; white-space: normal; }
+  .m-img { display: block; max-width: 100%; max-height: 320px; border-radius: 8px; }
+  .m-vid { display: block; max-width: 100%; max-height: 320px; border-radius: 8px; }
+  .m-file { display: flex; align-items: center; gap: 10px; padding: 10px 14px; text-decoration: none; color: inherit; white-space: normal; }
+  .m-file-ic { width: 34px; height: 34px; border-radius: 9px; background: rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .m-file-info { min-width: 0; flex: 1; }
+  .m-file-info b { font-size: 13px; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .m-file-info small { font-size: 11px; opacity: .7; }
+  .m-file-dl { font-size: 16px; flex-shrink: 0; }
+  .m-vid-wrap { position: relative; cursor: pointer; }
+  .m-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .m-play span { width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .lb { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .lb-close { position: absolute; top: 16px; right: 18px; color: #fff; font-size: 22px; cursor: pointer; }
+  .lb-img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 6px; }
+  .lb-vid { max-width: 95vw; max-height: 90vh; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<div id="home" class="home">
+  <div class="glow"></div>
+  <div class="wrap" style="position:relative;text-align:center">
+    <span class="badge"><span class="dot"></span> uçtan uca şifreli · tarayıcıda AES-GCM</span>
+    <h1>Veil Chat</h1>
+    <p class="sub">Anonim, şifreli sohbet odaları. Oda anahtarı yalnızca katılımcılarda kalır; sunucu ve veritabanı yalnızca şifrelenmiş metni görür. Fotoğraf, video ve dosya paylaşımı desteklenir.</p>
+    <div class="cards">
+      <div class="card">
+        <h2><span class="i">✦</span> Yeni oda oluştur</h2>
+        <label>Oda adı (isteğe bağlı)</label>
+        <input id="roomLabel" placeholder="Örn. Proje görüşmesi" />
+        <button class="btn btn-primary" onclick="createRoom()">Şifreli oda oluştur</button>
+        <p class="hint">Oda anahtarı tarayıcında üretilir ve bağlantının <b>#k=</b> parçasında taşınır. Sunucu yalnızca şifrelenmiş metni/dosyayı görür.</p>
+      </div>
+      <div class="card">
+        <h2><span class="i">→</span> Odaya katıl</h2>
+        <label>Oda bağlantısı</label>
+        <input id="joinLink" placeholder="https://…/#/room/…&k=…" />
+        <div class="err hidden" id="joinErr"></div>
+        <button class="btn btn-ghost" onclick="joinRoom()">Katıl</button>
+      </div>
+    </div>
+    <div class="features">
+      <div class="feat"><div class="ic">🔑</div><h3>Anahtar tarayıcıda</h3><p>Oda anahtarı bağlantının parçasında taşınır, sunucuya asla gönderilmez.</p></div>
+      <div class="feat"><div class="ic">🛡️</div><h3>Uçtan uca şifreli</h3><p>Mesajlar ve medya AES-GCM 256 ile tarayıcıda şifrelenir.</p></div>
+      <div class="feat"><div class="ic">📎</div><h3>Fotoğraf · video · dosya</h3><p>Medya tarayıcıda şifrelenir; sunucu yalnızca şifreli blob'u saklar.</p></div>
+    </div>
+  </div>
+</div>
+
+<div id="room" class="room hidden">
+  <div class="top"><div class="wrap"><div class="row">
+    <button class="iconbtn" onclick="goHome()">←</button>
+    <div class="title"><b>Şifreli oda</b><small id="roomIdLabel"></small></div>
+    <button class="copy" onclick="copyInvite()">⧉ Bağlantıyı kopyala</button>
+  </div></div></div>
+  <div class="msgs"><div class="wrap" id="msgList"></div></div>
+  <div class="composer"><div class="wrap"><div class="box">
+    <button class="iconbtn" onclick="document.getElementById('fileInput').click()" title="Dosya ekle">📎</button>
+    <textarea id="msgInput" placeholder="Şifreli mesajını yaz…" rows="1"></textarea>
+    <button class="send" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div></div></div>
+  <input id="fileInput" type="file" class="hidden" onchange="if(this.files[0])sendMedia(this.files[0]);this.value=''" />
+  <div id="lightbox" class="lb hidden" onclick="closeLightbox()"><span class="lb-close">✕</span><div id="lbContent"></div></div>
+</div>
+
+<script>
+// --- Web Crypto (AES-GCM 256) ---
+function bufToBase64(buf){const b=new Uint8Array(buf);let s="";for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s)}
+function base64ToBuf(b64){const s=atob(b64);const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return b.buffer}
+async function generateRoomKey(){const k=await crypto.subtle.generateKey({name:"AES-GCM",length:256},true,["encrypt","decrypt"]);const r=await crypto.subtle.exportKey("raw",k);return bufToBase64(r)}
+async function importRoomKey(b64){return crypto.subtle.importKey("raw",base64ToBuf(b64),{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function encryptText(k,t){const iv=crypto.getRandomValues(new Uint8Array(12));const enc=new TextEncoder().encode(t);const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},k,enc);return{ciphertext:bufToBase64(ct),iv:bufToBase64(iv.buffer)}}
+async function decryptText(k,ct,iv){try{const p=await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(base64ToBuf(iv))},k,base64ToBuf(ct));return new TextDecoder().decode(p)}catch{return null}}
+async function encryptBuffer(k,buffer){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},k,buffer);const out=new Uint8Array(iv.byteLength+ct.byteLength);out.set(iv,0);out.set(new Uint8Array(ct),iv.byteLength);return out.buffer}
+async function decryptBuffer(k,buffer){const iv=new Uint8Array(buffer.slice(0,12));const data=buffer.slice(12);return await crypto.subtle.decrypt({name:"AES-GCM",iv},k,data)}
+
+// --- oturum kimliği (sadece "ben" vs "diğer" ayrımı için) ---
+const meId=(()=>{let s=sessionStorage.getItem("veil_id");if(!s){s=crypto.randomUUID();sessionStorage.setItem("veil_id",s)}return s})();
+
+let key=null, roomId=null, ws=null, messages=[];
+const mediaCache={};
+const fetchingMedia={};
+
+function route(){const h=location.hash.replace(/^#\/?/,"");if(h.startsWith("room/")){const rest=h.slice(5);const parts=rest.split("&");const id=parts[0];let k=null;for(const p of parts){if(p.startsWith("k="))k=decodeURIComponent(p.slice(2))}return{view:"room",id,k}}return{view:"home"}}
+function show(id){document.getElementById("home").classList.toggle("hidden",id!=="home");document.getElementById("room").classList.toggle("hidden",id!=="room")}
+
+async function createRoom(){const label=document.getElementById("roomLabel").value.trim();const r=await fetch("/api/rooms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({label})});const d=await r.json();const k=await generateRoomKey();location.hash="/room/"+d.id+"&k="+k}
+
+function joinRoom(){const v=document.getElementById("joinLink").value.trim();const err=document.getElementById("joinErr");err.classList.add("hidden");if(!v)return;try{const u=new URL(v);const h=u.hash;if(h.startsWith("#/room/")){location.hash=h.slice(1)}else{err.textContent="Bağlantı bir oda adresi olmalıdır.";err.classList.remove("hidden")}}catch{err.textContent="Geçerli bir oda bağlantısı yapıştır.";err.classList.remove("hidden")}}
+function goHome(){location.hash=""}
+
+async function openRoom(id,k){
+  roomId=id;show("room");document.getElementById("roomIdLabel").textContent=id;
+  if(!k){document.getElementById("msgList").innerHTML='<div class="center">Oda anahtarı bulunamadı. Bağlantı eksik olabilir.</div>';return}
+  try{key=await importRoomKey(k)}catch{document.getElementById("msgList").innerHTML='<div class="center">Oda anahtarı geçersiz.</div>';return}
+  document.getElementById("msgList").innerHTML='<div class="center">Mesajlar çözülüyor…</div>';
+  let list=[];
+  try{const r=await fetch("/api/rooms/"+id+"/messages");const d=await r.json();list=d.messages||[]}catch{}
+  messages=await Promise.all(list.map(async m=>({...m,text:await decryptText(key,m.ciphertext,m.iv)})));
+  render();
+  if(ws)try{ws.close()}catch{}
+  const wsUrl=(location.protocol==="https:"?"wss:":"ws:")+"//"+location.host+"/ws";
+  ws=new WebSocket(wsUrl);
+  ws.onopen=()=>ws.send(JSON.stringify({type:"join",roomId:id}));
+  ws.onmessage=async(ev)=>{const e=JSON.parse(ev.data);if(e.type==="create"&&e.data&&e.data.room_id===id){if(messages.some(m=>m.id===e.data.id))return;const text=await decryptText(key,e.data.ciphertext,e.data.iv);messages.push({...e.data,text});render()}};
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]))}
+function formatSize(b){if(!b)return "";const u=["B","KB","MB","GB"];let i=0,n=b;while(n>=1024&&i<u.length-1){n/=1024;i++}return (i?n.toFixed(1):n)+" "+u[i]}
+
+function mediaHtml(m,c){
+  if(m.kind==="image") return '<img class="m-img" src="'+c.url+'" alt="'+escapeHtml(c.meta.filename||"")+'" onclick="openLightbox(\'image\',\''+c.url+'\')" style="cursor:zoom-in">';
+  if(m.kind==="video") return '<div class="m-vid-wrap" onclick="openLightbox(\'video\',\''+c.url+'\')"><video class="m-vid" src="'+c.url+'" preload="metadata"></video><div class="m-play"><span>▶</span></div></div>';
+  return '<a class="m-file" href="'+c.url+'" download="'+escapeHtml(c.meta.filename||"dosya")+'"><span class="m-file-ic">📄</span><span class="m-file-info"><b>'+escapeHtml(c.meta.filename||"Dosya")+'</b><small>'+formatSize(c.meta.size||0)+'</small></span><span class="m-file-dl">⤓</span></a>';
+}
+async function fetchMedia(m){
+  if(fetchingMedia[m.id]||mediaCache[m.id])return;
+  fetchingMedia[m.id]=true;
+  try{
+    const meta=m.text?JSON.parse(m.text):{};
+    const res=await fetch(m.media_uri);
+    const enc=await res.arrayBuffer();
+    const dec=await decryptBuffer(key,enc);
+    const blob=new Blob([dec],{type:meta.mime||"application/octet-stream"});
+    mediaCache[m.id]={url:URL.createObjectURL(blob),meta};
+    const el=document.getElementById("media-"+m.id);
+    if(el) el.outerHTML=mediaHtml(m,mediaCache[m.id]);
+  }catch{
+    const el=document.getElementById("media-"+m.id);
+    if(el) el.outerHTML='<div class="m-err">⚠ Çözülemedi</div>';
+  }finally{ delete fetchingMedia[m.id]; }
+}
+
+function render(){
+  const el=document.getElementById("msgList");
+  if(messages.length===0){el.innerHTML='<div class="empty">🔒 Bu oda boş. İlk şifreli mesajı gönder.</div>';return}
+  el.innerHTML=messages.map(m=>{
+    const mine=m.sender===meId;
+    const failed=m.text===null;
+    const isMedia=m.kind&&m.kind!=="text";
+    if(failed) return '<div class="bubble '+(mine?"mine":"theirs")+'"><span class="failed">⚠ Şifresi çözülemedi</span></div>';
+    if(isMedia){
+      const c=mediaCache[m.id];
+      const inner=c?mediaHtml(m,c):'<div id="media-'+m.id+'" class="m-loading">Çözülüyor…</div>';
+      return '<div class="bubble '+(mine?"mine":"theirs")+'">'+inner+'</div>';
+    }
+    return '<div class="bubble '+(mine?"mine":"theirs")+'">'+escapeHtml(m.text)+'</div>';
+  }).join("");
+  el.scrollTop=el.scrollHeight;
+  for(const m of messages){ if(m.kind&&m.kind!=="text"&&!mediaCache[m.id]) fetchMedia(m); }
+}
+
+async function sendMessage(){const t=document.getElementById("msgInput").value.trim();if(!t||!key)return;const{ciphertext,iv}=await encryptText(key,t);document.getElementById("msgInput").value="";await fetch("/api/rooms/"+roomId+"/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ciphertext,iv,sender:meId})})}
+
+async function sendMedia(file){
+  if(!key||!file)return;
+  try{
+    const buf=await file.arrayBuffer();
+    const enc=await encryptBuffer(key,buf);
+    const res=await fetch("/api/rooms/"+roomId+"/media",{method:"POST",headers:{"Content-Type":"application/octet-stream"},body:enc});
+    const d=await res.json();
+    const kind=file.type.startsWith("image/")?"image":file.type.startsWith("video/")?"video":"file";
+    const meta={filename:file.name,mime:file.type,size:file.size};
+    const{ciphertext,iv}=await encryptText(key,JSON.stringify(meta));
+    await fetch("/api/rooms/"+roomId+"/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ciphertext,iv,sender:meId,kind,media_uri:d.url})});
+  }catch(e){console.error("medya gönderilemedi",e)}
+}
+document.getElementById("msgInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
+
+function copyInvite(){const link=location.origin+"/#"+location.hash.replace(/^#/,"");navigator.clipboard.writeText(link)}
+function openLightbox(kind,url){const lb=document.getElementById("lightbox");const c=document.getElementById("lbContent");c.innerHTML=kind==="image"?'<img class="lb-img" src="'+url+'">':'<video class="lb-vid" src="'+url+'" controls autoplay></video>';lb.classList.remove("hidden")}
+function closeLightbox(){document.getElementById("lightbox").classList.add("hidden");document.getElementById("lbContent").innerHTML=""}
+
+function init(){const r=route();if(r.view==="room"){openRoom(r.id,r.k)}else{show("home")}}
+window.addEventListener("hashchange",init);
+init();
+</script>
+</body>
+</html>
