@@ -1,0 +1,10 @@
+services:
+  veil-chat:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - veil-data:/data
+    restart: unless-stopped
+volumes:
+  veil-data:

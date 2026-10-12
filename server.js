@@ -3,13 +3,23 @@ import express from "express";
 import { WebSocketServer } from "ws";
 import { createServer } from "http";
 import fs from "fs";
+import crypto from "crypto";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, "data.json");
-const UPLOAD_DIR = path.join(__dirname, "uploads");
+// Tek bir kalıcı klasör: DATA_DIR (varsayılan ./data). Volume/disk'i buraya bağla.
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
+const DATA_FILE = process.env.DATA_FILE || path.join(DATA_DIR, "data.json");
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(DATA_DIR, "uploads");
+const PUBLIC_DIR = path.join(__dirname, "public");
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "0.0.0.0";
+
+fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(path.join(PUBLIC_DIR, "index.html"))) {
+  console.error("UYARI: public/index.html bulunamadı → " + PUBLIC_DIR);
+}
 
 // --- JSON dosya deposu (harici bağımlılık yok) ---
 function load() {
@@ -36,7 +46,8 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
+app.use(express.static(PUBLIC_DIR));
 app.use("/uploads", express.static(UPLOAD_DIR));
 
 // Oda oluştur
@@ -111,4 +122,12 @@ function broadcast(roomId, payload) {
   }
 }
 
-server.listen(PORT, () => console.log(`Veil Chat → :${PORT}`));
+server.listen(PORT, HOST, () => console.log(`Veil Chat → ${HOST}:${PORT} (data: ${DATA_DIR})`));
+
+function shutdown() {
+  persist();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 3000).unref();
+}
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: veil-chat
+    runtime: docker
+    healthCheckPath: /healthz
+    disk:
+      name: veil-data
+      mountPath: /data
+      sizeGB: 1
